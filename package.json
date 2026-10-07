@@ -1,0 +1,33 @@
+{
+  "name": "lineform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "test:unit": "tsx --test tests/model.test.ts",
+    "test:browser": "playwright test",
+    "test": "npm run test:unit && npm run test:browser"
+  },
+  "dependencies": {
+    "elkjs": "^0.12.0",
+    "markdown-it": "^15.0.2",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/markdown-it": "^14.2.0",
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^6.4.4"
+  },
+  "description": "Turn structured text into clean SVG diagrams for the web and Markdown.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Floodnut/lineform.git"
+  }
+}
