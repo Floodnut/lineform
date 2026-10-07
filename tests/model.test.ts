@@ -40,3 +40,22 @@ test('literal HTML remains label text', () => {
   const diagram = parseDiagram(JSON.stringify({ type: 'lanes', columns: ['<script>'], rows: [['<img src=x onerror=alert(1)>']] })) as { rows: string[][] };
   assert.equal(diagram.rows[0][0], '<img src=x onerror=alert(1)>');
 });
+
+test('preserves flow default sizes and partial node overrides', () => {
+  const input = { type: 'flow', defaults: { width: 320, minHeight: 90 }, nodes: [{ id: 'a', label: '작업', width: 180 }, { id: 'b', label: '결과', minHeight: 120 }], edges: [] };
+  assert.deepEqual(parseDiagram(JSON.stringify(input)), { ...input, direction: 'down' });
+});
+test('accepts mixed string and sized lane columns', () => {
+  const input = { type: 'lanes', defaults: { width: 300, minHeight: 80 }, columns: ['기본', { label: '상세', width: 420 }], rows: [['검사', '결과']] };
+  assert.deepEqual(parseDiagram(JSON.stringify(input)), input);
+});
+for (const [name, input, pattern] of [
+  ['narrow default', { type: 'flow', defaults: { width: 40 }, nodes: [{ id: 'a', label: 'a' }], edges: [] }, /defaults.width/],
+  ['string width', { type: 'flow', nodes: [{ id: 'a', label: 'a', width: '200' }], edges: [] }, /nodes\[0\].width/],
+  ['negative height', { type: 'flow', nodes: [{ id: 'a', label: 'a', minHeight: -1 }], edges: [] }, /nodes\[0\].minHeight/],
+  ['null size', { type: 'flow', defaults: { width: null }, nodes: [{ id: 'a', label: 'a' }], edges: [] }, /defaults.width/],
+  ['unknown default', { type: 'flow', defaults: { height: 60 }, nodes: [{ id: 'a', label: 'a' }], edges: [] }, /height/],
+  ['missing column label', { type: 'lanes', columns: [{ width: 200 }], rows: [['a']] }, /columns\[0\].label/],
+  ['narrow column', { type: 'lanes', columns: [{ label: 'a', width: 79 }], rows: [['a']] }, /columns\[0\].width/],
+] as [string, unknown, RegExp][]) test(`rejects ${name}`, () => assert.throws(() => parseDiagram(JSON.stringify(input)), pattern));
+test('rejects infinite sizes', () => assert.throws(() => parseDiagram('type: lanes\ndefaults: {width: .inf}\ncolumns: [a]\nrows: [[a]]'), /defaults.width/));

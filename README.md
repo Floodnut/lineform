@@ -2,7 +2,7 @@
 
 **Text in. Structure out.**
 
-Version **0.1.0** · [MIT License](LICENSE)
+Version **0.2.0** · [MIT License](LICENSE)
 
 Lineform turns structured text into clean SVG diagrams for web pages and Markdown. Write the content and relationships; Lineform measures the text, sizes the boxes, and places the connecting lines.
 
@@ -17,6 +17,7 @@ No space-padded borders. No manual coordinates.
 - **Flow diagrams** - connect nodes with automatic layout, branching, and merging.
 - **Markdown integration** - embed diagrams in fenced `diagram` blocks alongside regular prose.
 - **Measured text layout** - wrap long labels, mixed Korean and English text, and unbroken identifiers inside their boxes.
+- **Configurable box sizes** - set default and per-node widths and minimum heights, or different widths for each lane.
 - **SVG export** - download diagrams with their styles and arrow definitions included.
 - **Local rendering** - diagram parsing and rendering happen in your browser, without a backend API.
 
@@ -87,6 +88,50 @@ edges:
 ```
 
 `direction` accepts `down` (the default) or `right`. Edges must reference existing nodes. Disconnected nodes are supported; cycles, self-loops, and duplicate edges are not.
+
+### Box sizes (0.2)
+
+Sizes are in pixels. `width` is the total box width, including padding, and must be a finite number of at least 80. `minHeight` must be a finite, nonnegative number. Text wraps to fit the width; height grows beyond the minimum when needed, so a small `minHeight` never clips the content.
+
+For flow diagrams, each node overrides individual fields from `defaults`:
+
+```yaml
+type: flow
+defaults:
+  width: 280
+  minHeight: 80
+nodes:
+  - id: check
+    label: Uses the default size
+  - id: detail
+    label: A wider box with extra vertical space
+    width: 420
+    minHeight: 120
+edges:
+  - from: check
+    to: detail
+```
+
+For lanes, keep a column as a string or use an object with `label` and `width`:
+
+```yaml
+type: lanes
+defaults:
+  width: 280
+  minHeight: 80
+columns:
+  - Background worker
+  - label: Main thread
+    width: 420
+rows:
+  - [Check the current state, null]
+  - [null, Update the shared state]
+conclusion: Columns can have different widths while rows stay aligned.
+```
+
+`defaults.width` applies to columns without an explicit width. `defaults.minHeight` sets the minimum body-row height; every cell in a row grows together. Headers size themselves to their text, and the conclusion spans the combined column widths with content-driven height.
+
+Without size options, existing diagrams keep their 280px box widths and content-driven heights. The same options work inside Markdown `diagram` blocks and in exported SVGs.
 
 ### Inside Markdown
 

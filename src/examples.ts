@@ -61,4 +61,31 @@ conclusion: 공백으로 위치를 맞추지 않아도 글자와 테두리가 �
 export function asMarkdown(source: string) {
   return '# 실행 순서 분석\n\n문서 안에서도 같은 다이어그램을 사용할 수 있습니다.\n\n```diagram\n' + source.trim() + '\n```\n\n## 확인할 내용\n\n- 위에서 아래로 실행 순서를 읽습니다.\n- 빈 칸은 해당 단계에 작업이 없음을 나타냅니다.\n';
 }
-export const examples: Record<string, string> = { lanes: lanesExample, flow: flowExample, long: longExample };
+export const sizedExample = `type: flow
+title: 박스 크기를 직접 지정하세요
+direction: down
+
+defaults:
+  width: 280
+  minHeight: 80
+
+nodes:
+  - id: check
+    label: 기본 크기의 박스
+  - id: detail
+    label: 이 박스는 너비 420px, 최소 높이 120px입니다. 내용이 더 길어지면 높이가 자동으로 늘어납니다.
+    width: 420
+    minHeight: 120
+  - id: done
+    label: 완료
+    width: 160
+    minHeight: 60
+
+edges:
+  - from: check
+    to: detail
+  - from: detail
+    to: done
+`;
+
+export const examples: Record<string, string> = { lanes: lanesExample, flow: flowExample, long: longExample, sized: sizedExample };

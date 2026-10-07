@@ -59,20 +59,23 @@ function finish(svg: SVGSVGElement, width: number, height: number) {
 }
 function renderLanes(diagram: LanesDiagram): SVGSVGElement {
   const { svg, markerId } = startSvg(diagram);
-  const width = BOX_WIDTH * diagram.columns.length;
+  const widths = diagram.columns.map(column => (typeof column === 'string' ? undefined : column.width) ?? diagram.defaults?.width ?? BOX_WIDTH);
+  const offsets: number[] = [];
+  let width = 0;
+  for (const columnWidth of widths) { offsets.push(width); width += columnWidth; }
   let y = addTitle(svg, diagram.title, width);
-  const headers = diagram.columns.map(name => wrapText(name, BOX_WIDTH - PAD_X * 2, 600));
+  const headers = diagram.columns.map((column, i) => wrapText(typeof column === 'string' ? column : column.label, widths[i] - PAD_X * 2, 600));
   const headerHeight = Math.max(...headers.map(lines => lines.length)) * LINE_HEIGHT + PAD_Y * 2;
   headers.forEach((lines, col) => {
-    const header = box(MARGIN + col * BOX_WIDTH, y, BOX_WIDTH, headerHeight, lines, col % 2 ? '#edf1f8' : '#eaf3f0', 600);
+    const header = box(MARGIN + offsets[col], y, widths[col], headerHeight, lines, col % 2 ? '#edf1f8' : '#eaf3f0', 600);
     svg.append(header);
   });
   y += headerHeight;
   diagram.rows.forEach((row, index) => {
-    const wrapped = row.map(label => label === null ? [] : wrapText(label, BOX_WIDTH - PAD_X * 2));
-    const rowHeight = Math.max(1, ...wrapped.map(lines => lines.length)) * LINE_HEIGHT + PAD_Y * 2;
+    const wrapped = row.map((label, col) => label === null ? [] : wrapText(label, widths[col] - PAD_X * 2));
+    const rowHeight = Math.max(diagram.defaults?.minHeight ?? 0, Math.max(1, ...wrapped.map(lines => lines.length)) * LINE_HEIGHT + PAD_Y * 2);
     wrapped.forEach((lines, col) => {
-      const cell = box(MARGIN + col * BOX_WIDTH, y, BOX_WIDTH, rowHeight, lines, row[col] === null ? '#f8fafb' : '#ffffff');
+      const cell = box(MARGIN + offsets[col], y, widths[col], rowHeight, lines, row[col] === null ? '#f8fafb' : '#ffffff');
       cell.setAttribute('data-cell', '');
       cell.setAttribute('data-row', String(index));
       svg.append(cell);
@@ -93,13 +96,14 @@ async function renderFlow(diagram: FlowDiagram): Promise<SVGSVGElement> {
   const { svg, markerId } = startSvg(diagram);
   elkPromise ??= import('elkjs/lib/elk.bundled.js').then(({ default: ELK }) => new ELK());
   const elk = await elkPromise;
-  const labels = diagram.nodes.map(n => wrapText(n.label, BOX_WIDTH - PAD_X * 2));
+  const widths = diagram.nodes.map(n => n.width ?? diagram.defaults?.width ?? BOX_WIDTH);
+  const labels = diagram.nodes.map((n, i) => wrapText(n.label, widths[i] - PAD_X * 2));
   // Internal IDs avoid collisions with graph IDs or special user-provided strings.
   const ids = new Map(diagram.nodes.map((node, i) => [node.id, `n${i}`]));
   const graph: ElkNode = await elk.layout({
     id: 'root',
     layoutOptions: { 'elk.algorithm': 'layered', 'elk.direction': diagram.direction === 'down' ? 'DOWN' : 'RIGHT', 'elk.edgeRouting': 'ORTHOGONAL', 'elk.spacing.nodeNode': '32', 'elk.layered.spacing.nodeNodeBetweenLayers': '54', 'elk.padding': '[top=0,left=0,bottom=0,right=0]' },
-    children: diagram.nodes.map((_, i) => ({ id: `n${i}`, width: BOX_WIDTH, height: labels[i].length * LINE_HEIGHT + PAD_Y * 2 })),
+    children: diagram.nodes.map((node, i) => ({ id: `n${i}`, width: widths[i], height: Math.max(node.minHeight ?? diagram.defaults?.minHeight ?? 0, labels[i].length * LINE_HEIGHT + PAD_Y * 2) })),
     edges: diagram.edges.map((edge, i) => ({ id: `e${i}`, sources: [ids.get(edge.from)!], targets: [ids.get(edge.to)!] })),
   });
   const width = graph.width!;

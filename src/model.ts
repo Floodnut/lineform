@@ -1,7 +1,9 @@
 import { parseDocument, visit } from 'yaml';
 
-export type LanesDiagram = { type: 'lanes'; title?: string; columns: string[]; rows: (string | null)[][]; conclusion?: string };
-export type FlowDiagram = { type: 'flow'; title?: string; direction: 'down' | 'right'; nodes: { id: string; label: string }[]; edges: { from: string; to: string }[] };
+export type BoxSize = { width?: number; minHeight?: number };
+export type LaneColumn = string | { label: string; width?: number };
+export type LanesDiagram = { type: 'lanes'; title?: string; defaults?: BoxSize; columns: LaneColumn[]; rows: (string | null)[][]; conclusion?: string };
+export type FlowDiagram = { type: 'flow'; title?: string; defaults?: BoxSize; direction: 'down' | 'right'; nodes: ({ id: string; label: string } & BoxSize)[]; edges: { from: string; to: string }[] };
 export type Diagram = LanesDiagram | FlowDiagram;
 
 function fail(path: string, message: string): never { throw new Error(`${path}: ${message}`); }
@@ -19,35 +21,51 @@ function array(value: unknown, path: string, nonempty = true): unknown[] {
   return value;
 }
 
+function size(value: Record<string, unknown>, path: string): BoxSize {
+  const result: BoxSize = {};
+  for (const key of ['width', 'minHeight'] as const) {
+    if (value[key] === undefined) continue;
+    const minimum = key === 'width' ? 80 : 0;
+    if (typeof value[key] !== 'number' || !Number.isFinite(value[key]) || value[key] < minimum) fail(`${path}.${key}`, `${minimum} 이상의 유한한 숫자(px)가 필요합니다.`);
+    result[key] = value[key];
+  }
+  return result;
+}
+
 export function parseDiagram(source: string): Diagram {
   const doc = parseDocument(source, { uniqueKeys: true });
   if (doc.errors.length) throw new Error(doc.errors[0].message);
   visit(doc, { Alias() { fail('YAML', '별칭은 지원하지 않습니다. 내용을 직접 작성하세요.'); } });
   const raw: unknown = doc.toJS();
-  const root = object(raw, 'diagram', ['type', 'title', 'columns', 'rows', 'conclusion', 'direction', 'nodes', 'edges']);
+  const root = object(raw, 'diagram', ['type', 'title', 'columns', 'rows', 'conclusion', 'direction', 'nodes', 'edges', 'defaults']);
+  const defaults = root.defaults === undefined ? {} : { defaults: size(object(root.defaults, 'defaults', ['width', 'minHeight']), 'defaults') };
   const title = root.title === undefined ? {} : { title: label(root.title, 'title') };
   if (root.type === 'lanes') {
-    object(raw, 'lanes', ['type', 'title', 'columns', 'rows', 'conclusion']);
-    const columns = array(root.columns, 'columns').map((x, i) => label(x, `columns[${i}]`));
+    object(raw, 'lanes', ['type', 'title', 'columns', 'rows', 'conclusion', 'defaults']);
+    const columns = array(root.columns, 'columns').map((x, i) => {
+      if (typeof x === 'string') return label(x, `columns[${i}]`);
+      const column = object(x, `columns[${i}]`, ['label', 'width']);
+      return { label: label(column.label, `columns[${i}].label`), ...size(column, `columns[${i}]`) };
+    });
     const rows = array(root.rows, 'rows').map((row, r) => {
       const cells = array(row, `rows[${r}]`);
       if (cells.length !== columns.length) fail(`rows[${r}]`, `열 ${columns.length}개에 맞춰 셀을 작성하세요. 빈 칸은 null입니다.`);
       return cells.map((x, c) => x === null ? null : label(x, `rows[${r}][${c}]`));
     });
     const conclusion = root.conclusion === undefined ? {} : { conclusion: label(root.conclusion, 'conclusion') };
-    return { type: 'lanes', ...title, columns, rows, ...conclusion };
+    return { type: 'lanes', ...title, ...defaults, columns, rows, ...conclusion };
   }
   if (root.type !== 'flow') fail('type', 'lanes 또는 flow를 사용하세요.');
-  object(raw, 'flow', ['type', 'title', 'direction', 'nodes', 'edges']);
+  object(raw, 'flow', ['type', 'title', 'direction', 'nodes', 'edges', 'defaults']);
   const direction = root.direction ?? 'down';
   if (direction !== 'down' && direction !== 'right') fail('direction', 'down 또는 right를 사용하세요.');
   const ids = new Set<string>();
   const nodes = array(root.nodes, 'nodes').map((value, i) => {
-    const node = object(value, `nodes[${i}]`, ['id', 'label']);
+    const node = object(value, `nodes[${i}]`, ['id', 'label', 'width', 'minHeight']);
     const id = label(node.id, `nodes[${i}].id`);
     if (ids.has(id)) fail(`nodes[${i}].id`, `중복 ID: ${id}`);
     ids.add(id);
-    return { id, label: label(node.label, `nodes[${i}].label`) };
+    return { id, label: label(node.label, `nodes[${i}].label`), ...size(node, `nodes[${i}]`) };
   });
   const pairs = new Set<string>();
   const edges = array(root.edges, 'edges', false).map((value, i) => {
@@ -73,5 +91,5 @@ export function parseDiagram(source: string): Diagram {
     if (degrees.get(id) === 0) queue.push(id);
   }
   if (queue.length !== nodes.length) fail('edges', '순환 연결은 첫 버전에서 지원하지 않습니다.');
-  return { type: 'flow', ...title, direction, nodes, edges };
+  return { type: 'flow', ...title, ...defaults, direction, nodes, edges };
 }
