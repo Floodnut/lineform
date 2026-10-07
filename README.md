@@ -4,6 +4,8 @@
 
 Version **0.3.0** · [MIT License](LICENSE)
 
+[Q&A: How Lineform differs from Mermaid and why I built it](docs/QNA.md)
+
 Lineform turns structured text into clean SVG diagrams for web pages and Markdown. Write the content and relationships; Lineform measures the text, sizes the boxes, and places the connecting lines.
 
 No space-padded borders. No manual coordinates.
