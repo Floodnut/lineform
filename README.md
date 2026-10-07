@@ -12,13 +12,13 @@ No space-padded borders. No manual coordinates.
 
 ## Features
 
-- **Text-first editing** — write YAML and see the diagram update as you type.
-- **Parallel timelines** — organize events into lanes with shared row boundaries.
-- **Flow diagrams** — connect nodes with automatic layout, branching, and merging.
-- **Markdown integration** — embed diagrams in fenced `diagram` blocks alongside regular prose.
-- **Measured text layout** — wrap long labels, mixed Korean and English text, and unbroken identifiers inside their boxes.
-- **SVG export** — download diagrams with their styles and arrow definitions included.
-- **Local rendering** — diagram parsing and rendering happen in your browser, without a backend API.
+- **Text-first editing** - write YAML and see the diagram update as you type.
+- **Parallel timelines** - organize events into lanes with shared row boundaries.
+- **Flow diagrams** - connect nodes with automatic layout, branching, and merging.
+- **Markdown integration** - embed diagrams in fenced `diagram` blocks alongside regular prose.
+- **Measured text layout** - wrap long labels, mixed Korean and English text, and unbroken identifiers inside their boxes.
+- **SVG export** - download diagrams with their styles and arrow definitions included.
+- **Local rendering** - diagram parsing and rendering happen in your browser, without a backend API.
 
 The current editor interface is in Korean. Diagram labels can use any language supported by your browser's fonts.
 
