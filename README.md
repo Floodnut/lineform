@@ -2,7 +2,7 @@
 
 **Text in. Structure out.**
 
-Version **0.2.0** · [MIT License](LICENSE)
+Version **0.3.0** · [MIT License](LICENSE)
 
 Lineform turns structured text into clean SVG diagrams for web pages and Markdown. Write the content and relationships; Lineform measures the text, sizes the boxes, and places the connecting lines.
 
@@ -15,6 +15,7 @@ No space-padded borders. No manual coordinates.
 - **Text-first editing** - write YAML and see the diagram update as you type.
 - **Parallel timelines** - organize events into lanes with shared row boundaries.
 - **Flow diagrams** - connect nodes with automatic layout, branching, and merging.
+- **Edge labels** - add text beside connecting arrows, with automatic wrapping and layout-aware placement.
 - **Markdown integration** - embed diagrams in fenced `diagram` blocks alongside regular prose.
 - **Measured text layout** - wrap long labels, mixed Korean and English text, and unbroken identifiers inside their boxes.
 - **Configurable box sizes** - set default and per-node widths and minimum heights, or different widths for each lane.
@@ -88,6 +89,36 @@ edges:
 ```
 
 `direction` accepts `down` (the default) or `right`. Edges must reference existing nodes. Disconnected nodes are supported; cycles, self-loops, and duplicate edges are not.
+
+### Edge labels (0.3)
+
+Add an optional `label` to a flow edge to place text beside its arrow:
+
+```yaml
+type: flow
+nodes:
+  - id: update
+    label: Update state
+  - id: cache
+    label: Compute cache
+edges:
+  - from: update
+    to: cache
+    label: Called twice per iteration
+```
+
+Labels are measured before layout, so their space is considered when placing nodes and routing edges. They work with both `down` and `right` directions. Long labels wrap at a 240px text width; explicit line breaks are preserved:
+
+```yaml
+edges:
+  - from: cache
+    to: next
+    label: |-
+      Input for the
+      next iteration
+```
+
+A label must be a nonempty string; omit `label` for an unlabeled arrow. Labels are rendered as literal SVG text and are included in Markdown previews and SVG downloads. Each label belongs to one edge; shared branch annotations and standalone borderless text nodes are not included in this release.
 
 ### Box sizes (0.2)
 

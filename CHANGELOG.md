@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 - 2026-10-07
+
+- Add optional `label` text to flow diagram edges.
+- Measure and wrap edge labels before layout to reserve space beside arrows.
+- Support Korean, English, explicit newlines, and literal markup in labels.
+- Preserve labels in Markdown previews and exported SVGs.
+- Add an edge-label example and validation and collision tests.
+
 ## 0.2.0 - 2026-10-07
 
 - Add diagram-wide `defaults.width` and `defaults.minHeight`.

@@ -76,3 +76,20 @@ test('mobile keeps the diagram geometry inside a horizontally scrollable canvas'
   expect(scroll.content).toBeGreaterThan(scroll.width);
   await page.screenshot({ path: 'artifacts/mobile.png', fullPage: true });
 });
+
+test('Markdown exports edge labels as standalone SVG text', async ({ page, context }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Markdown', exact: true }).click();
+  const input = 'type: flow\nnodes: [{id: a, label: Input}, {id: b, label: Output}]\nedges: [{from: a, to: b, label: "두 번 호출 & <상태>"}]';
+  await page.getByRole('textbox', { name: '다이어그램 소스' }).fill(block(input));
+  await expect(page.locator('#preview [data-edge-label]')).toContainText('두 번 호출 & <상태>');
+  const downloading = page.waitForEvent('download');
+  await page.locator('#preview').getByRole('button', { name: 'SVG 다운로드', exact: true }).click();
+  const download = await downloading;
+  const content = await readFile((await download.path())!, 'utf8');
+  const standalone = await context.newPage();
+  await standalone.goto('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(content));
+  await expect(standalone.locator('parsererror')).toHaveCount(0);
+  await expect(standalone.locator('[data-edge-label]')).toContainText('두 번 호출 & <상태>');
+  expect(await standalone.locator('[data-edge-label] text').evaluate(text => (text as SVGTextElement).getBBox().width)).toBeGreaterThan(0);
+});

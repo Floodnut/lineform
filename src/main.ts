@@ -9,7 +9,7 @@ const downloadIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none
 
 document.querySelector('#app')!.innerHTML = `
   <header class="app-header">
-    <a class="brand" href="/" aria-label="Lineform 홈"><span class="brand-mark">${logo}</span><span>Lineform</span><span class="version">v0.2.0</span></a>
+    <a class="brand" href="/" aria-label="Lineform 홈"><span class="brand-mark">${logo}</span><span>Lineform</span><span class="version">v0.3.0</span></a>
     <span class="local-badge"><span class="dot"></span>브라우저에서 실행</span>
   </header>
   <main>
@@ -20,7 +20,7 @@ document.querySelector('#app')!.innerHTML = `
     <section class="workspace" aria-label="다이어그램 편집기">
       <section class="source-panel">
         <div class="panel-header"><h2><span class="panel-icon" aria-hidden="true">⌘</span> 소스</h2><div class="mode-switch" aria-label="입력 형식"><button data-mode="yaml" aria-pressed="true">YAML</button><button data-mode="markdown" aria-pressed="false">Markdown</button></div></div>
-        <div class="source-toolbar"><label for="example">예제</label><select id="example" aria-label="예제 선택"><option value="lanes">열별 진행도</option><option value="flow">분기와 합류</option><option value="long">긴 문장과 줄바꿈</option><option value="sized">박스 크기 지정</option></select><span class="auto-badge">자동 반영</span></div>
+        <div class="source-toolbar"><label for="example">예제</label><select id="example" aria-label="예제 선택"><option value="lanes">열별 진행도</option><option value="flow">분기와 합류</option><option value="long">긴 문장과 줄바꿈</option><option value="sized">박스 크기 지정</option><option value="labels">연결선 라벨</option></select><span class="auto-badge">자동 반영</span></div>
         <div class="editor-wrap"><div id="line-numbers" aria-hidden="true"></div><textarea id="source" aria-label="다이어그램 소스" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off"></textarea></div>
         <div class="source-footer"><span id="line-count"></span><span>UTF-8 <span class="footer-divider">/</span> 한글 지원</span></div>
       </section>
@@ -30,7 +30,7 @@ document.querySelector('#app')!.innerHTML = `
         <div class="preview-footer"><span id="status" role="status" aria-live="polite">준비 중…</span><span id="dimensions"></span></div>
       </section>
     </section>
-    <details class="guide"><summary><span><span class="guide-icon" aria-hidden="true">?</span> 작성 가이드 <span class="guide-caption">두 가지 다이어그램, 하나의 문법</span></span><span aria-hidden="true">⌄</span></summary><div class="guide-content"><div><h3>열별 진행도 <code>lanes</code></h3><p><code>columns</code>에 열 이름, <code>rows</code>에 단계별 내용을 적으세요. 빈 칸은 <code>null</code>, 하단 결론은 <code>conclusion</code>입니다. 열을 <code>{ label: 이름, width: 360 }</code> 형태로 쓰면 너비를 지정합니다.</p></div><div><h3>흐름도 <code>flow</code></h3><p><code>nodes</code>에 <code>id</code>와 <code>label</code>을 적고, <code>edges</code>의 <code>from</code>과 <code>to</code>로 연결하세요. 방향은 <code>down</code> 또는 <code>right</code>입니다. <code>defaults</code>나 개별 노드에 <code>width</code>·<code>minHeight</code>를 지정할 수 있습니다.</p></div><div><h3>Markdown 안에서</h3><p><code>diagram</code> 코드 블록 안에 같은 YAML을 넣으세요. 일반 문단과 다이어그램을 함께 작성하고, 각 결과를 SVG로 저장할 수 있습니다.</p></div></div></details>
+    <details class="guide"><summary><span><span class="guide-icon" aria-hidden="true">?</span> 작성 가이드 <span class="guide-caption">두 가지 다이어그램, 하나의 문법</span></span><span aria-hidden="true">⌄</span></summary><div class="guide-content"><div><h3>열별 진행도 <code>lanes</code></h3><p><code>columns</code>에 열 이름, <code>rows</code>에 단계별 내용을 적으세요. 빈 칸은 <code>null</code>, 하단 결론은 <code>conclusion</code>입니다. 열을 <code>{ label: 이름, width: 360 }</code> 형태로 쓰면 너비를 지정합니다.</p></div><div><h3>흐름도 <code>flow</code></h3><p><code>nodes</code>에 <code>id</code>와 <code>label</code>을 적고, <code>edges</code>의 <code>from</code>과 <code>to</code>로 연결하세요. 연결선에 <code>label</code>을 추가하면 화살표 옆에 설명이 표시됩니다. 방향은 <code>down</code> 또는 <code>right</code>입니다. <code>defaults</code>나 개별 노드에 <code>width</code>·<code>minHeight</code>를 지정할 수 있습니다.</p></div><div><h3>Markdown 안에서</h3><p><code>diagram</code> 코드 블록 안에 같은 YAML을 넣으세요. 일반 문단과 다이어그램을 함께 작성하고, 각 결과를 SVG로 저장할 수 있습니다.</p></div></div></details>
     <footer class="page-footer"><span>Lineform</span><span>텍스트는 가볍게, 구조는 또렷하게.</span></footer>
   </main>`;
 

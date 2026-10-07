@@ -6,6 +6,11 @@ export const PAD_Y = 16;
 export const BOX_WIDTH = 280;
 
 let context: CanvasRenderingContext2D;
+export function measureTextWidth(text: string, weight = 400, size = FONT_SIZE): number {
+  context ??= document.createElement('canvas').getContext('2d')!;
+  context.font = `${weight} ${size}px ${FONT}`;
+  return context.measureText(text).width;
+}
 export function wrapText(text: string, width: number, weight = 400, size = FONT_SIZE): string[] {
   context ??= document.createElement('canvas').getContext('2d')!;
   context.font = `${weight} ${size}px ${FONT}`;

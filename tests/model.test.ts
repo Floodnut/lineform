@@ -59,3 +59,12 @@ for (const [name, input, pattern] of [
   ['narrow column', { type: 'lanes', columns: [{ label: 'a', width: 79 }], rows: [['a']] }, /columns\[0\].width/],
 ] as [string, unknown, RegExp][]) test(`rejects ${name}`, () => assert.throws(() => parseDiagram(JSON.stringify(input)), pattern));
 test('rejects infinite sizes', () => assert.throws(() => parseDiagram('type: lanes\ndefaults: {width: .inf}\ncolumns: [a]\nrows: [[a]]'), /defaults.width/));
+
+test('preserves optional edge labels including literal markup and newlines', () => {
+  const input = { type: 'flow', nodes: [{ id: 'a', label: '입력' }, { id: 'b', label: '결과' }], edges: [{ from: 'a', to: 'b', label: '<값> & 상태\n두 번 호출' }] };
+  assert.deepEqual(parseDiagram(JSON.stringify(input)), { ...input, direction: 'down' });
+});
+for (const invalidLabel of ['', '  ', null, 42, { text: 'label' }]) test(`rejects invalid edge label ${JSON.stringify(invalidLabel)}`, () => {
+  const input = { type: 'flow', nodes: [{ id: 'a', label: 'a' }, { id: 'b', label: 'b' }], edges: [{ from: 'a', to: 'b', label: invalidLabel }] };
+  assert.throws(() => parseDiagram(JSON.stringify(input)), /edges\[0\].label:.*문자열/);
+});

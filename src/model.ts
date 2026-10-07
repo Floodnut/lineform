@@ -3,7 +3,7 @@ import { parseDocument, visit } from 'yaml';
 export type BoxSize = { width?: number; minHeight?: number };
 export type LaneColumn = string | { label: string; width?: number };
 export type LanesDiagram = { type: 'lanes'; title?: string; defaults?: BoxSize; columns: LaneColumn[]; rows: (string | null)[][]; conclusion?: string };
-export type FlowDiagram = { type: 'flow'; title?: string; defaults?: BoxSize; direction: 'down' | 'right'; nodes: ({ id: string; label: string } & BoxSize)[]; edges: { from: string; to: string }[] };
+export type FlowDiagram = { type: 'flow'; title?: string; defaults?: BoxSize; direction: 'down' | 'right'; nodes: ({ id: string; label: string } & BoxSize)[]; edges: { from: string; to: string; label?: string }[] };
 export type Diagram = LanesDiagram | FlowDiagram;
 
 function fail(path: string, message: string): never { throw new Error(`${path}: ${message}`); }
@@ -69,7 +69,7 @@ export function parseDiagram(source: string): Diagram {
   });
   const pairs = new Set<string>();
   const edges = array(root.edges, 'edges', false).map((value, i) => {
-    const edge = object(value, `edges[${i}]`, ['from', 'to']);
+    const edge = object(value, `edges[${i}]`, ['from', 'to', 'label']);
     const from = label(edge.from, `edges[${i}].from`);
     const to = label(edge.to, `edges[${i}].to`);
     if (!ids.has(from) || !ids.has(to)) fail(`edges[${i}]`, '존재하지 않는 노드를 참조합니다.');
@@ -77,7 +77,8 @@ export function parseDiagram(source: string): Diagram {
     const key = JSON.stringify([from, to]);
     if (pairs.has(key)) fail(`edges[${i}]`, '중복 연결입니다.');
     pairs.add(key);
-    return { from, to };
+    const edgeLabel = edge.label === undefined ? {} : { label: label(edge.label, `edges[${i}].label`) };
+    return { from, to, ...edgeLabel };
   });
   const degrees = new Map(nodes.map(n => [n.id, 0]));
   const next = new Map(nodes.map(n => [n.id, [] as string[]]));

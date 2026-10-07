@@ -1,5 +1,5 @@
 import { parseDiagram, type Diagram, type FlowDiagram, type LanesDiagram } from './model';
-import { FONT, FONT_SIZE, LINE_HEIGHT, PAD_X, PAD_Y, BOX_WIDTH, wrapText } from './text';
+import { FONT, FONT_SIZE, LINE_HEIGHT, PAD_X, PAD_Y, BOX_WIDTH, wrapText, measureTextWidth } from './text';
 import type { ElkNode, ELK } from 'elkjs/lib/elk-api';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -98,13 +98,21 @@ async function renderFlow(diagram: FlowDiagram): Promise<SVGSVGElement> {
   const elk = await elkPromise;
   const widths = diagram.nodes.map(n => n.width ?? diagram.defaults?.width ?? BOX_WIDTH);
   const labels = diagram.nodes.map((n, i) => wrapText(n.label, widths[i] - PAD_X * 2));
+  const edgeLabels = diagram.edges.map(edge => {
+    if (edge.label === undefined) return undefined;
+    const lines = wrapText(edge.label, 240);
+    return { lines, width: Math.ceil(Math.max(...lines.map(line => measureTextWidth(line)))) + 8, height: lines.length * LINE_HEIGHT + 8 };
+  });
   // Internal IDs avoid collisions with graph IDs or special user-provided strings.
   const ids = new Map(diagram.nodes.map((node, i) => [node.id, `n${i}`]));
   const graph: ElkNode = await elk.layout({
     id: 'root',
-    layoutOptions: { 'elk.algorithm': 'layered', 'elk.direction': diagram.direction === 'down' ? 'DOWN' : 'RIGHT', 'elk.edgeRouting': 'ORTHOGONAL', 'elk.spacing.nodeNode': '32', 'elk.layered.spacing.nodeNodeBetweenLayers': '54', 'elk.padding': '[top=0,left=0,bottom=0,right=0]' },
+    layoutOptions: { 'elk.algorithm': 'layered', 'elk.direction': diagram.direction === 'down' ? 'DOWN' : 'RIGHT', 'elk.edgeRouting': 'ORTHOGONAL', 'elk.spacing.edgeLabel': '8', 'elk.spacing.nodeNode': '32', 'elk.layered.spacing.nodeNodeBetweenLayers': '54', 'elk.padding': '[top=0,left=0,bottom=0,right=0]' },
     children: diagram.nodes.map((node, i) => ({ id: `n${i}`, width: widths[i], height: Math.max(node.minHeight ?? diagram.defaults?.minHeight ?? 0, labels[i].length * LINE_HEIGHT + PAD_Y * 2) })),
-    edges: diagram.edges.map((edge, i) => ({ id: `e${i}`, sources: [ids.get(edge.from)!], targets: [ids.get(edge.to)!] })),
+    edges: diagram.edges.map((edge, i) => ({
+      id: `e${i}`, sources: [ids.get(edge.from)!], targets: [ids.get(edge.to)!],
+      ...(edgeLabels[i] ? { labels: [{ id: `l${i}`, text: edge.label, width: edgeLabels[i].width, height: edgeLabels[i].height, layoutOptions: { 'elk.edgeLabels.placement': 'CENTER', 'elk.edgeLabels.inline': 'false' } }] } : {}),
+    })),
   });
   const width = graph.width!;
   const top = addTitle(svg, diagram.title, width);
@@ -117,6 +125,14 @@ async function renderFlow(diagram: FlowDiagram): Promise<SVGSVGElement> {
     group.setAttribute('data-node', diagram.nodes[i].id);
     svg.append(group);
   });
+  for (const edge of graph.edges ?? []) for (const label of edge.labels ?? []) {
+    const measured = edgeLabels[Number(edge.id.slice(1))]!;
+    const x = label.x! + MARGIN, y = label.y! + top;
+    const group = svgElement('g', { 'data-edge-label': edge.id, 'data-box': '' });
+    group.append(svgElement('rect', { x, y, width: measured.width, height: measured.height, fill: '#ffffff', rx: 3 }));
+    group.append(textElement(measured.lines, x + 4, y + 20, 400, FONT_SIZE, '#526d73'));
+    svg.append(group);
+  }
   return finish(svg, width + MARGIN * 2, graph.height! + top + MARGIN);
 }
 

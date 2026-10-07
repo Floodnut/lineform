@@ -88,4 +88,35 @@ edges:
     to: done
 `;
 
-export const examples: Record<string, string> = { lanes: lanesExample, flow: flowExample, long: longExample, sized: sizedExample };
+export const labelsExample = `type: flow
+title: 화살표 옆에 설명을 붙이세요
+direction: down
+
+defaults:
+  width: 220
+
+nodes:
+  - id: update
+    label: 32비트 상태 갱신
+  - id: cache
+    label: rcache 계산
+  - id: output
+    label: 출력 워드 저장
+  - id: next
+    label: 다음 반복
+
+edges:
+  - from: update
+    to: cache
+    label: 한 반복에서 두 번 호출
+  - from: update
+    to: output
+    label: 출력에 사용
+  - from: cache
+    to: next
+    label: |-
+      다음 반복의
+      r(m_w) 입력
+`;
+
+export const examples: Record<string, string> = { lanes: lanesExample, flow: flowExample, long: longExample, sized: sizedExample, labels: labelsExample };

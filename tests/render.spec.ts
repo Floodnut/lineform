@@ -103,3 +103,42 @@ test('sized lanes preserve shared rows and total-width conclusion', async ({ pag
   await expect(page.locator('[data-box]').last().locator('rect')).toHaveAttribute('width', '400');
   await assertTextFits(page);
 });
+
+for (const direction of ['down', 'right']) test(`edge labels ${direction} wrap and avoid boxes, other labels and edge paths`, async ({ page }) => {
+  await draw(page, { type: 'flow', direction, defaults: { width: 160 }, nodes: [
+    { id: 'a', label: '시작' }, { id: 'b', label: '캐시' }, { id: 'c', label: '원본' }, { id: 'd', label: '결과' },
+  ], edges: [
+    { from: 'a', to: 'b', label: '한 반복에서 두 번 호출' },
+    { from: 'a', to: 'c', label: '캐시 없음\n원본 조회' },
+    { from: 'b', to: 'd', label: '매우 긴 한글 설명과 EnglishIdentifierWithoutSpaces'.repeat(4) },
+    { from: 'c', to: 'd' },
+    { from: 'a', to: 'd', label: '<script> & 👩‍💻' },
+  ] });
+  await expect(page.locator('[data-edge-label]')).toHaveCount(4);
+  await expect(page.locator('[data-edge-label="e0"]')).toContainText('한 반복에서 두 번 호출');
+  await expect(page.locator('[data-edge-label="e4"]')).toContainText('<script> & 👩‍💻');
+  await expect(page.locator('svg script')).toHaveCount(0);
+  expect(await page.locator('[data-edge-label="e2"] tspan').count()).toBeGreaterThan(1);
+  await assertTextFits(page);
+  const errors = await page.evaluate(() => {
+    const svg = document.querySelector('svg[data-diagram]') as SVGSVGElement;
+    const bounds = svg.viewBox.baseVal;
+    const labels = [...document.querySelectorAll<SVGRectElement>('[data-edge-label] rect')].map(n => n.getBBox());
+    const nodes = [...document.querySelectorAll<SVGRectElement>('[data-node] rect')].map(n => n.getBBox());
+    const problems: string[] = [];
+    const overlap = (a: DOMRect, b: DOMRect) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    labels.forEach((label, i) => {
+      if (nodes.some(n => overlap(label, n))) problems.push('label overlaps node');
+      if (labels.slice(i + 1).some(l => overlap(label, l))) problems.push('labels overlap');
+      if (label.x < 0 || label.y < 0 || label.x + label.width > bounds.width || label.y + label.height > bounds.height) problems.push('clipped label');
+      for (const edge of document.querySelectorAll<SVGPathElement>('[data-edge]')) {
+        for (let length = 0; length <= edge.getTotalLength(); length += 2) {
+          const p = edge.getPointAtLength(length);
+          if (p.x > label.x && p.x < label.x + label.width && p.y > label.y && p.y < label.y + label.height) { problems.push('edge crosses label'); break; }
+        }
+      }
+    });
+    return problems;
+  });
+  expect(errors).toEqual([]);
+});
